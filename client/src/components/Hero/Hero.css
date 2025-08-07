@@ -1,0 +1,40 @@
+.image-container1 {
+    position: relative;
+    overflow: hidden; /* Prevents image overflow during animation */
+    height: 100vh;
+  }
+  
+  .slide-item1 {
+    position: relative;
+  }
+  
+  .fade-in {
+    animation: fadeIn 1s forwards;
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      transform: translateX(100%); /* Start from the right */
+      opacity: 0; /* Fade in */
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .fade-out {
+    animation: fadeOut 1s forwards;
+  }
+  
+  @keyframes fadeOut {
+    0% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(-100%); /* Move out to the left */
+      opacity: 0; /* Fade out */
+    }
+  }
+  
