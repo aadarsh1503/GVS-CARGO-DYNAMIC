@@ -55,29 +55,27 @@ export const RegionProvider = ({ children }) => {
       } else {
         // --- KEY CHANGE 2: Improved IP Detection Logic ---
         try {
-          const response = await fetch('http://ip-api.com/json');
+          const response = await fetch('https://gvs-cargo-dynamic.onrender.com/api/detect-region');
           const data = await response.json();
-          const detectedCountryCode = data.countryCode; // e.g., 'IN', 'SG', 'AE'
+          const detectedCountryCode = data.countryCode; 
 
-          // Convert country code to your app's region code format (e.g., 'IN' -> 'india')
-          // Assuming your region codes are lowercase versions of country codes.
-          // IMPORTANT: Adjust this map if your codes don't match country codes directly.
+         
           const countryToRegionCodeMap = {
               'BH': 'bahrain',
               'AE': 'uae',
               'SA': 'ksa',
-              'IN': 'india', // Add mappings for all your regions
+              'IN': 'india', 
               'SG': 'singapore',
           };
           
           const potentialRegionCode = countryToRegionCodeMap[detectedCountryCode];
 
-          // Check if the detected region is one of your active regions
+          
           const isValidRegion = regionsData.find(r => r.code === potentialRegionCode);
           
-          let finalRegion = 'bahrain'; // Default fallback
+          let finalRegion = 'bahrain'; 
           if (isValidRegion) {
-            finalRegion = potentialRegionCode; // Use the valid detected region
+            finalRegion = potentialRegionCode; 
             console.log(`IP detected region '${finalRegion}' which is valid.`);
           } else {
             console.log(`IP detected country '${detectedCountryCode}', but no matching region found. Defaulting to Bahrain.`);
@@ -98,12 +96,12 @@ export const RegionProvider = ({ children }) => {
     initializeRegion();
   }, []); // Empty dependency array, runs once on mount
 
-  // This function is called when the user manually changes the region
+  
   const handleSetRegion = async (newRegion) => {
     setIsLoading(true);
     sessionStorage.setItem('userSelectedRegion', newRegion);
     await fetchContentForRegion(newRegion);
-    // The `setRegion` state update will be handled inside `fetchContentForRegion` on success
+  
     setIsLoading(false);
   };
 
