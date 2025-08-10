@@ -8,7 +8,7 @@ import countryFlagEmoji from 'country-flag-emoji';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
 const CreateRegionPage = () => {
     const navigate = useNavigate();

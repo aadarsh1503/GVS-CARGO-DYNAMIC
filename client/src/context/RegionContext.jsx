@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const RegionContext = createContext();
 
 // The base URL for your backend API
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
 export const RegionProvider = ({ children }) => {
   const [region, setRegion] = useState('bahrain'); // Default region code
