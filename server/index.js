@@ -5,8 +5,8 @@ const helmet = require('helmet');
 const contentRoutes = require('./src/routes/contentRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
-const db = require('./src/config/db'); // import DB connection
-
+const db = require('./src/config/db');
+const geoip = require('geoip-lite');
 const app = express();
 
 // --- Middleware ---
@@ -28,7 +28,35 @@ app.use('/api/admin', adminRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+app.get('/api/detect-region', (req, res) => {
 
+  const ip = req.ip;
+
+ 
+  const testIp = ip === '::1' || ip === '127.0.0.1' ? '202.83.21.11' : ip; 
+
+  const geo = geoip.lookup(testIp);
+
+  if (geo) {
+   
+      res.json({
+          ip: testIp,
+          countryCode: geo.country, // e.g., 'IN', 'BH', 'AE'
+          region: geo.region,       // e.g., 'MH' for Maharashtra
+          city: geo.city,
+      });
+  } else {
+
+      res.status(404).json({
+          ip: testIp,
+          error: 'Could not determine location for this IP address.',
+      });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Region detection server is running on http://localhost:${PORT}`);
+});
 // --- Connect to MySQL and Start Server ---
 (async () => {
   try {
