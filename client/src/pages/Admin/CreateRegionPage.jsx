@@ -40,8 +40,22 @@ const CreateRegionPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!selectedCountry) {
-            setMessage('Error: Please select a country.');
+        // --- VALIDATION: Check if all fields are filled ---
+        if (
+            !selectedCountry ||
+            !address.trim() ||
+            !phone.trim() ||
+            !whatsapp.trim() ||
+            !email_customer_care.trim() ||
+            !email_sales.trim() ||
+            !email_business.trim() ||
+            !social_linkedin.trim() ||
+            !social_instagram.trim() ||
+            !social_facebook.trim() ||
+            !social_twitter.trim() ||
+            !local_modal_map_src.trim()
+        ) {
+            setMessage('Error: All fields are mandatory. Please fill out the entire form.');
             return;
         }
 
@@ -109,6 +123,7 @@ const CreateRegionPage = () => {
                                     onChange={handleCountryChange}
                                     className="text-lg"
                                     placeholder="Search and select a country..."
+                                    // The JS validation in handleSubmit handles this component
                                 />
                             </div>
                         </fieldset>
@@ -118,7 +133,7 @@ const CreateRegionPage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-semibold text-gray-600 mb-2">Address</label>
-                                    <textarea placeholder="Enter full address, one line per line" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} rows="3"></textarea>
+                                    <textarea placeholder="Enter full address, one line per line" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} rows="3" required></textarea>
                                 </div>
                                 
                                 <div>
@@ -129,6 +144,7 @@ const CreateRegionPage = () => {
                                         onChange={setPhone}
                                         placeholder="Enter phone number..."
                                         inputClass={inputClass}
+                                        // The JS validation in handleSubmit handles this component
                                     />
                                 </div>
                                 
@@ -140,22 +156,23 @@ const CreateRegionPage = () => {
                                         onChange={setWhatsapp}
                                         placeholder="Enter WhatsApp number..."
                                         inputClass={inputClass}
+                                        // The JS validation in handleSubmit handles this component
                                     />
                                 </div>
 
                                 {/* --- (3) NEW JSX for email inputs --- */}
-                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Customer Care Email</label><input type="email" placeholder="care@example.com" value={email_customer_care} onChange={(e) => setEmailCustomerCare(e.target.value)} className={inputClass} /></div>
-                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Sales Email</label><input type="email" placeholder="sales@example.com" value={email_sales} onChange={(e) => setEmailSales(e.target.value)} className={inputClass} /></div>
-                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Business Email</label><input type="email" placeholder="info@example.com" value={email_business} onChange={(e) => setEmailBusiness(e.target.value)} className={inputClass} /></div>
+                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Customer Care Email</label><input type="email" placeholder="care@example.com" value={email_customer_care} onChange={(e) => setEmailCustomerCare(e.target.value)} className={inputClass} required /></div>
+                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Sales Email</label><input type="email" placeholder="sales@example.com" value={email_sales} onChange={(e) => setEmailSales(e.target.value)} className={inputClass} required /></div>
+                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Business Email</label><input type="email" placeholder="info@example.com" value={email_business} onChange={(e) => setEmailBusiness(e.target.value)} className={inputClass} required /></div>
                                 
                                 <div className='md:col-span-2 border-t pt-6 mt-2'>
                                     <h3 className='text-md font-semibold text-gray-500 mb-4 text-center'>Social Media Links</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">LinkedIn URL</label><input type="url" placeholder="https://linkedin.com/..." value={social_linkedin} onChange={(e) => setLinkedin(e.target.value)} className={inputClass} /></div>
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Instagram URL</label><input type="url" placeholder="https://instagram.com/..." value={social_instagram} onChange={(e) => setInstagram(e.target.value)} className={inputClass} /></div>
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Facebook URL</label><input type="url" placeholder="https://facebook.com/..." value={social_facebook} onChange={(e) => setFacebook(e.target.value)} className={inputClass} /></div>
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Twitter URL</label><input type="url" placeholder="https://twitter.com/..." value={social_twitter} onChange={(e) => setTwitter(e.target.value)} className={inputClass} /></div>
-                                        <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-600 mb-2">Local Map Embed Source (URL)</label><input type="url" placeholder="Google Maps embed URL..." value={local_modal_map_src} onChange={(e) => setMapSrc(e.target.value)} className={inputClass} /></div>
+                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">LinkedIn URL</label><input type="url" placeholder="https://linkedin.com/..." value={social_linkedin} onChange={(e) => setLinkedin(e.target.value)} className={inputClass} required /></div>
+                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Instagram URL</label><input type="url" placeholder="https://instagram.com/..." value={social_instagram} onChange={(e) => setInstagram(e.target.value)} className={inputClass} required /></div>
+                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Facebook URL</label><input type="url" placeholder="https://facebook.com/..." value={social_facebook} onChange={(e) => setFacebook(e.target.value)} className={inputClass} required /></div>
+                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Twitter URL</label><input type="url" placeholder="https://twitter.com/..." value={social_twitter} onChange={(e) => setTwitter(e.target.value)} className={inputClass} required /></div>
+                                        <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-600 mb-2">Local Map Embed Source (URL)</label><input type="url" placeholder="Google Maps embed URL..." value={local_modal_map_src} onChange={(e) => setMapSrc(e.target.value)} className={inputClass} required /></div>
                                     </div>
                                 </div>
                             </div>

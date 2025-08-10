@@ -139,7 +139,7 @@ const RegionEditForm = () => {
                         <p className="text-slate-500 mt-2 text-lg">Modifying data stream for <span className="font-semibold text-[#243670]">{regionName}</span></p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2  gap-x-6 gap-y-8">
                         {editableFields.map(key => {
                             const isTextArea = key === 'address';
                             const isPhoneField = key === 'phone' || key === 'whatsapp';
@@ -147,8 +147,8 @@ const RegionEditForm = () => {
 
                             if (isPhoneField) {
                                 return (
-                                    <div className='relative z-10' key={key}>
-                                        <label className="absolute -top-2.5 left-3 text-xs bg-white/70 px-1 text-slate-500">{key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
+                                    <div className='relative ml-2 z-10' key={key}>
+                                        <label className="absolute -top-6 left-3 text-xs bg-white/70 px-1 text-slate-500">{key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
                                         <PhoneInput
                                             country={'us'} 
                                             value={content[key] || ''}

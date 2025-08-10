@@ -1,72 +1,159 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiUser, FiLock } from 'react-icons/fi';
 
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
+/**
+ * Injects our custom, fluid CSS animations into the page.
+ * This is how we achieve the magic without touching config files.
+ */
+const StyleInjector = () => (
+    <style>
+        {`
+            @keyframes liquid-flow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            @keyframes ripple-pulse {
+                0%, 100% { transform: scale(0.95); opacity: 0.7; }
+                50% { transform: scale(1.05); opacity: 1; }
+            }
+        `}
+    </style>
+);
+
+
 const AdminLogin = () => {
+    // --- State management, now including isLoading ---
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false); // The sexy loading state
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         setError('');
+
+        // Simulate a network request to show off the beautiful loading state
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
         try {
             const response = await fetch(`${API_URL}/admin/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
-
             const data = await response.json();
-
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to login');
+                throw new Error(data.message || 'Login Failed');
             }
-
-            // Store token in localStorage
             localStorage.setItem('adminToken', data.token);
-            // Navigate to admin dashboard on successful login
             navigate('/admin/dashboard');
-
         } catch (err) {
             setError(err.message);
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-sm">
-                <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
-                <form onSubmit={handleLogin}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Username</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
+        <>
+            <StyleInjector />
+            <div className="relative flex items-center justify-center min-h-screen font-sans overflow-hidden">
+                {/* The beautiful, animated gradient background */}
+                <div 
+                    className="absolute inset-0 z-0"
+                    style={{
+                        backgroundImage: 'linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)',
+                        backgroundSize: '200% 200%',
+                        animation: 'liquid-flow 15s ease-in-out infinite',
+                    }}
+                />
+
+                {/* The Floating Glass Card */}
+                <div className="relative z-10 w-full max-w-md p-8 transition-all duration-500 bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-2xl">
+                    
+                    {/* We use a key on the child div to force a remount (and thus a fade transition) when isLoading changes */}
+                    <div key={isLoading ? 'loading' : 'form'} className="transition-opacity duration-500 animate-in fade-in">
+                        
+                        {isLoading ? (
+                            // --- THE SEXY RIPPLE LOADING STATE ---
+                            <div className="flex flex-col items-center justify-center space-y-10 h-96">
+                                <img 
+                                    src="https://gvscargo.com/assets/GVS-Yttnar72.png" 
+                                    alt="GVS Logo"
+                                    className="w-24 h-auto"
+                                />
+                                <div className="flex items-center justify-center space-x-2">
+                                    <div className="w-4 h-4 rounded-full bg-[#243670]" style={{ animation: 'ripple-pulse 1.5s ease-in-out infinite' }}></div>
+                                    <div className="w-4 h-4 rounded-full bg-[#243670]" style={{ animation: 'ripple-pulse 1.5s ease-in-out infinite', animationDelay: '0.2s' }}></div>
+                                    <div className="w-4 h-4 rounded-full bg-[#243670]" style={{ animation: 'ripple-pulse 1.5s ease-in-out infinite', animationDelay: '0.4s' }}></div>
+                                </div>
+                                <p className="text-[#243670]/80">Authenticating...</p>
+                            </div>
+                        ) : (
+                            // --- THE ELEGANT LOGIN FORM ---
+                            <div className="space-y-8 h-96 flex flex-col justify-center">
+                                <div className="text-center">
+                                    <img 
+                                        src="https://gvscargo.com/assets/GVS-Yttnar72.png" 
+                                        alt="GVS Cargo Logo"
+                                        className="w-32 h-auto mx-auto mb-4"
+                                    />
+                                    <h2 className="text-3xl font-bold text-[#243670]">Admin Access</h2>
+                                    <p className="text-[#243670]/70">Sign in to continue</p>
+                                </div>
+                                
+                                <form onSubmit={handleLogin} className="space-y-6">
+                                    {/* Username Input with "Aura" Focus */}
+                                    <div className="relative">
+                                        <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-[#243670]/50" />
+                                        <input
+                                            type="text"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 bg-white/60 text-[#243670] placeholder-[#243670]/50 border-2 border-transparent rounded-xl focus:outline-none focus:ring-4 focus:ring-[#243670]/20 focus:border-white transition-all duration-300"
+                                            placeholder="Username"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Password Input with "Aura" Focus */}
+                                    <div className="relative">
+                                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#243670]/50" />
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 bg-white/60 text-[#243670] placeholder-[#243670]/50 border-2 border-transparent rounded-xl focus:outline-none focus:ring-4 focus:ring-[#243670]/20 focus:border-white transition-all duration-300"
+                                            placeholder="Password"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    {error && (
+                                        <div className="text-center text-red-800 bg-red-200/50 p-2 rounded-lg text-sm">
+                                            <p>{error}</p>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Shimmering Gradient Button */}
+                                    <button 
+                                        type="submit" 
+                                        className="w-full font-bold text-white py-3 rounded-xl bg-gradient-to-r from-[#243670] to-[#5b72b4] shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#5b72b4]/50"
+                                    >
+                                        SIGN IN
+                                    </button>
+                                </form>
+                            </div>
+                        )}
                     </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-700 mb-2">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-                    {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-                    <button type="submit" className="w-full bg-DarkBlue text-white py-2 rounded-lg hover:bg-blue-800 transition-colors">
-                        Login
-                    </button>
-                </form>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
