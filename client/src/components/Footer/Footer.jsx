@@ -115,7 +115,7 @@ const Footer = () => {
                   <FaChevronDown className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isOpen && (
-                  <div className="absolute -right-6 top-0 mt-2 bg-white text-black p-3 font-sans rounded-lg shadow-lg z-10">
+                  <div className="absolute right-0 lg:-right-28 top-0 mt-2 bg-white text-black p-3 font-sans rounded-lg shadow-lg z-10">
                     <ul className="space-y-2">
                         {/* --- DYNAMIC EMAIL CHANGES (FOOTER) --- */}
                         {content.email_customer_care && (
