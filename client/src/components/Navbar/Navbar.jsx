@@ -174,11 +174,11 @@ const Navbar = () => {
             </div>
             <div className="flex items-center space-x-2">
               <FaPhoneAlt className="text-white bg-DarkBlue rounded text-4xl p-2" />
-              <span className="text-sm">{content.phone}</span>
+              <span className="text-sm">+{content.phone}</span>
             </div>
             <div className="flex items-center space-x-2">
               <FaWhatsapp className="text-white bg-DarkBlue text-4xl p-1" />
-              <span className="text-sm">{content.whatsapp}</span>
+              <span className="text-sm">+{content.whatsapp}</span>
             </div>
           </div>
         </div>
