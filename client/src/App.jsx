@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // ========= YOUR EXISTING COMPONENT IMPORTS =========
@@ -39,36 +39,70 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminSignUp from './pages/Admin/AdminSignUp';
 import CreateRegionPage from './pages/Admin/CreateRegionPage';
 
-
 import { RegionProvider, useRegion } from "./context/RegionContext";
 
+// The API URL, make sure this is correct
+const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
 const MainLayout = () => {
-
   const { isInitializing, isChangingRegion, region, availableRegions } = useRegion();
+  // This state will now be populated by the useEffect hook
+  const [regionContent, setRegionContent] = useState(null);
+
+  // --- ADD THIS useEffect HOOK ---
+  // This hook will run whenever the 'region' changes.
+  useEffect(() => {
+    // If there is no region selected yet, do nothing.
+    if (!region) return;
+
+    const fetchRegionContent = async () => {
+      try {
+        const response = await fetch(`${API_URL}/content/${region}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch region content');
+        }
+        const data = await response.json();
+        setRegionContent(data); // <-- IMPORTANT: Update the state with fetched data
+      } catch (error) {
+        console.error("Error fetching content for region:", region, error);
+        setRegionContent(null); // Reset on error
+      }
+    };
+
+    fetchRegionContent();
+  }, [region]); // <-- Dependency: Re-run this effect when 'region' changes
+
+  // --- END OF ADDED CODE ---
 
 
   if (isInitializing) {
     return <GlobalLoader />;
   }
 
-
   const currentRegionData = availableRegions.find(r => r.code === region);
   const regionName = currentRegionData ? currentRegionData.name : 'Loading...';
   const regionFlag = currentRegionData ? currentRegionData.country_flag : '🌍';
 
-  // Render the full app layout
   return (
     <>
       <RegionTransitionOverlay
-        isVisible={isChangingRegion} // Controlled by region changes only
+        isVisible={isChangingRegion}
         regionName={regionName}
         regionFlag={regionFlag}
       />
 
-      {/* The GlobalLoader is no longer needed here */}
       <Navbar />
-      <ChatWidget />
+      
+      {/* 
+        This will now work!
+        When regionContent is updated, this component will re-render
+        and pass the correct numbers to the ChatWidget.
+      */}
+      <ChatWidget 
+        salesNumber={regionContent?.whatsapp_sales}
+        supportNumber={regionContent?.whatsapp_support}
+      />
+      
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -94,8 +128,6 @@ const MainLayout = () => {
           <Route path="/contactUs" element={<ContactUs />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/testimonials" element={<Testimonials />} />
-
-          {/* Fallback for any unknown public routes */}
           <Route path="*" element={<div><h2>404 Page Not Found</h2></div>} />
         </Routes>
       </main>
@@ -103,7 +135,6 @@ const MainLayout = () => {
     </>
   );
 };
-
 
 function App() {
   return (

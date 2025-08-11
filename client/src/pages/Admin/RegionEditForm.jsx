@@ -9,7 +9,6 @@ import 'react-phone-input-2/lib/style.css';
 
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
-// Loader component remains the same
 const FuturisticLoader = ({ regionCode }) => (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
         <div className="relative">
@@ -36,7 +35,6 @@ const RegionEditForm = () => {
             if (!response.ok) throw new Error('Failed to fetch content');
             const data = await response.json();
             setRegionName(data.name);
-            // Ensure address is a string for the textarea
             if (data.address && Array.isArray(data.address)) {
                 data.address = data.address.join('\n');
             }
@@ -67,12 +65,10 @@ const RegionEditForm = () => {
         
         const token = localStorage.getItem('adminToken');
         const submissionData = { ...content };
-        // Convert address string back to array for submission
         if (submissionData.address) {
             submissionData.address = submissionData.address.split('\n').filter(line => line.trim() !== '');
         }
         
-        // Remove read-only fields that shouldn't be sent in the PUT request
         const fieldsToDelete = ['id', 'region_id', 'name', 'code', 'country_flag', 'updated_at', 'welcome_message', 'operate_heading', 'local_button_text', 'global_button_text', 'local_modal_title', 'local_modal_description', 'global_modal_title', 'global_modal_description', 'close_button_text', 'operate_in_country_title', 'operate_in_country_desc'];
         fieldsToDelete.forEach(field => delete submissionData[field]);
 
@@ -89,18 +85,17 @@ const RegionEditForm = () => {
             }
             const result = await response.json();
             setMessage(result.message);
-            // Re-fetch content to show updated data, especially the formatted address
             await fetchContent(); 
             setTimeout(() => setMessage(''), 4000);
-        } catch (error) {
+        // --- FIX IS HERE ---
+        } catch (error) { 
             setMessage(`Error: ${error.message}`);
         } finally {
             setIsSaving(false);
         }
     };
     
-    // --- MODIFICATION: Split fields into logical groups for the UI ---
-    const coreFields = ['address', 'phone', 'whatsapp'];
+    const coreFields = ['address', 'phone', 'whatsapp', 'whatsapp_sales', 'whatsapp_support'];
     const optionalFields = [
         'email_customer_care', 'email_sales', 'email_business',
         'social_linkedin', 'social_instagram', 'social_facebook', 'social_twitter',
@@ -120,7 +115,6 @@ const RegionEditForm = () => {
         </div>
     );
     
-    // Helper to format field names for labels
     const formatLabel = (key) => key.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 
     return (
@@ -133,7 +127,6 @@ const RegionEditForm = () => {
                     </div>
 
                     <div className="space-y-6">
-                        {/* --- MODIFICATION: Fieldset for Core/Mandatory details --- */}
                         <fieldset className="border border-slate-300 rounded-lg p-6">
                             <legend className="px-2 text-lg font-semibold text-[#243670]">Core Details</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -150,7 +143,6 @@ const RegionEditForm = () => {
                             </div>
                         </fieldset>
 
-                        {/* --- MODIFICATION: Fieldset for Optional details --- */}
                         <fieldset className="border border-slate-300 rounded-lg p-6">
                             <legend className="px-2 text-lg font-semibold text-[#243670]">Optional Content</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
