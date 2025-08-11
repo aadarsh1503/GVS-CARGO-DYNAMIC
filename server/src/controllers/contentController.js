@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 
-// @desc    Get all active regions for the dropdown
+
 // @route   GET /api/regions
 // @access  Public
 const getAllRegions = async (req, res) => {
@@ -16,13 +16,14 @@ const getAllRegions = async (req, res) => {
   }
 };
 
-// @desc    Get all content for a specific region by its code
+
 // @route   GET /api/content/:regionCode
 // @access  Public
 const getContentByRegionCode = async (req, res) => {
   try {
     const { regionCode } = req.params;
-    // --- MODIFICATION: Added new email fields to the SELECT statement ---
+    
+    // This query already selects all content fields, so it will automatically include the new ones
     const query = `
             SELECT rc.*, r.name, r.code, r.country_flag
             FROM region_content rc
@@ -72,37 +73,27 @@ const getContentByRegionCode = async (req, res) => {
   }
 };
 
-// @desc    Create a new region and its default content
+
 // @route   POST /api/regions
 // @access  Protected/Admin
-const createRegionWithContent = async (req, res) => {
-  // --- MODIFICATION: Destructure new email fields from request body ---
+const createRegionWithContent = async (req, res, next) => { // Use 'next' for error handling
   const {
-    name,
-    code,
-    country_flag,
-    address,
-    phone,
-    whatsapp,
-    social_linkedin,
-    social_instagram,
-    social_facebook,
-    social_twitter,
-    local_modal_map_src,
-    email_customer_care,
-    email_sales,
-    email_business, // New fields
+    name, code, country_flag, address, phone, whatsapp,
+    whatsapp_sales, whatsapp_support, social_linkedin, social_instagram,
+    social_facebook, social_twitter, local_modal_map_src,
+    email_customer_care, email_sales, email_business,
   } = req.body;
 
   if (!name || !code) {
-    return res
-      .status(400)
-      .json({ message: "Region name and code are required." });
+    return res.status(400).json({ message: "Region name and code are required." });
   }
 
-  const connection = await pool.getConnection();
+  let connection; // Define connection here to be accessible everywhere
+
   try {
+    connection = await pool.getConnection();
     await connection.beginTransaction();
+
     const [existingRegions] = await connection.query(
       "SELECT id, is_active FROM regions WHERE code = ? FOR UPDATE",
       [code]
@@ -116,12 +107,12 @@ const createRegionWithContent = async (req, res) => {
       regionId = existingRegion.id;
 
       if (existingRegion.is_active === 1) {
+        // This is the critical part. We rollback and then we MUST stop.
+        // We will let the finally block handle the release.
         await connection.rollback();
-        return res
-          .status(409)
-          .json({
-            message: `A region with the code '${code}' is already active.`,
-          });
+        // The connection is now idle. Release it before sending the response.
+        connection.release();
+        return res.status(409).json({ message: `A region with the code '${code}' is already active.` });
       }
 
       console.log(`Reactivating and updating region with code: ${code}`);
@@ -130,11 +121,12 @@ const createRegionWithContent = async (req, res) => {
         [name, country_flag || null, regionId]
       );
 
-      // --- MODIFICATION: Prepare email fields for update ---
       const contentToUpdate = {
         address: JSON.stringify(address || []),
         phone: phone || "",
         whatsapp: whatsapp || "",
+        whatsapp_sales: whatsapp_sales || "",
+        whatsapp_support: whatsapp_support || "",
         social_linkedin: social_linkedin || "",
         social_instagram: social_instagram || "",
         social_facebook: social_facebook || "",
@@ -145,10 +137,10 @@ const createRegionWithContent = async (req, res) => {
         email_business: email_business || "info@gvscargo.com",
       };
 
-      await connection.query(
-        "UPDATE region_content SET ? WHERE region_id = ?",
-        [contentToUpdate, regionId]
-      );
+      await connection.query("UPDATE region_content SET ? WHERE region_id = ?", [
+        contentToUpdate,
+        regionId,
+      ]);
       successMessage = "Region reactivated and updated successfully.";
     } else {
       console.log(`Creating new region with code: ${code}`);
@@ -159,12 +151,13 @@ const createRegionWithContent = async (req, res) => {
       );
       regionId = regionResult.insertId;
 
-      // --- MODIFICATION: Prepare new email fields for insert ---
       const newContent = {
         region_id: regionId,
         address: JSON.stringify(address || []),
         phone: phone || "",
         whatsapp: whatsapp || "",
+        whatsapp_sales: whatsapp_sales || "",
+        whatsapp_support: whatsapp_support || "",
         social_linkedin: social_linkedin || "",
         social_instagram: social_instagram || "",
         social_facebook: social_facebook || "",
@@ -179,19 +172,23 @@ const createRegionWithContent = async (req, res) => {
       successMessage = "Region created successfully.";
     }
 
+    // Success path: commit, then release, then send response
     await connection.commit();
+    connection.release();
     res.status(201).json({
       message: successMessage,
       newRegion: { id: regionId, name, code, country_flag },
     });
+
   } catch (error) {
-    await connection.rollback();
+    // Error path: rollback if connection exists, then release, then pass error
+    if (connection) {
+      await connection.rollback();
+      connection.release();
+    }
     console.error("Error in createRegionWithContent:", error);
-    res
-      .status(500)
-      .json({ message: "Error processing region", error: error.message });
-  } finally {
-    connection.release();
+    // Instead of res.json, pass to your error handler middleware
+    next(error); 
   }
 };
 
@@ -199,8 +196,7 @@ const createRegionWithContent = async (req, res) => {
 // @route   PUT /api/content/:regionCode
 // @access  Protected/Admin
 const updateContentByRegionCode = async (req, res) => {
-  // NO CHANGES NEEDED HERE - This function is already generic and will update any fields passed in the body.
-  // Just ensure your admin panel sends the new email fields (e.g., email_sales) in the request body.
+  // NO CHANGES NEEDED HERE. This function is generic and will update any fields sent.
   const { regionCode } = req.params;
   const contentFields = req.body;
 
@@ -236,7 +232,7 @@ const updateContentByRegionCode = async (req, res) => {
   }
 };
 
-// No changes needed for delete
+// NO CHANGES NEEDED HERE.
 const deleteRegionByCode = async (req, res) => {
   try {
     const { regionCode } = req.params;

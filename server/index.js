@@ -54,15 +54,11 @@ app.get('/api/detect-region', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Region detection server is running on http://localhost:${PORT}`);
-});
-// --- Connect to MySQL and Start Server ---
 (async () => {
   try {
     const conn = await db.getConnection();
     console.log('✅ MySQL connected');
-    conn.release(); // release the connection back to pool
+    conn.release();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
