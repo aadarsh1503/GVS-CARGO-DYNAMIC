@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiLock } from 'react-icons/fi';
+// Import the new eye icons
+import { FiUser, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
@@ -26,11 +27,12 @@ const StyleInjector = () => (
 
 
 const AdminLogin = () => {
-    // --- State management, now including isLoading ---
+    // --- State management, now including isLoading and password visibility ---
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // The sexy loading state
+    const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false); // State for password visibility
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
@@ -55,8 +57,14 @@ const AdminLogin = () => {
             navigate('/admin/dashboard');
         } catch (err) {
             setError(err.message);
+        } finally {
             setIsLoading(false);
         }
+    };
+    
+    // Toggle function for password visibility
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
     };
 
     return (
@@ -121,17 +129,25 @@ const AdminLogin = () => {
                                         />
                                     </div>
 
-                                    {/* Password Input with "Aura" Focus */}
+                                    {/* Password Input with "Aura" Focus and Eye Button */}
                                     <div className="relative">
                                         <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#243670]/50" />
                                         <input
-                                            type="password"
+                                            type={showPassword ? 'text' : 'password'}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 bg-white/60 text-[#243670] placeholder-[#243670]/50 border-2 border-transparent rounded-xl focus:outline-none focus:ring-4 focus:ring-[#243670]/20 focus:border-white transition-all duration-300"
+                                            className="w-full pl-12 pr-12 py-3 bg-white/60 text-[#243670] placeholder-[#243670]/50 border-2 border-transparent rounded-xl focus:outline-none focus:ring-4 focus:ring-[#243670]/20 focus:border-white transition-all duration-300"
                                             placeholder="Password"
                                             required
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={togglePasswordVisibility}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#243670]/50 hover:text-[#243670] transition-colors"
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                                        </button>
                                     </div>
                                     
                                     {error && (
@@ -143,9 +159,10 @@ const AdminLogin = () => {
                                     {/* Shimmering Gradient Button */}
                                     <button 
                                         type="submit" 
-                                        className="w-full font-bold text-white py-3 rounded-xl bg-gradient-to-r from-[#243670] to-[#5b72b4] shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#5b72b4]/50"
+                                        disabled={isLoading}
+                                        className="w-full font-bold text-white py-3 rounded-xl bg-gradient-to-r from-[#243670] to-[#5b72b4] shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#5b72b4]/50 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
-                                        SIGN IN
+                                        {isLoading ? 'SIGNING IN...' : 'SIGN IN'}
                                     </button>
                                 </form>
                             </div>

@@ -40,22 +40,14 @@ const CreateRegionPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // --- VALIDATION: Check if all fields are filled ---
+        // --- MODIFICATION: VALIDATION - Only selectedCountry, address, phone, and whatsapp are mandatory now ---
         if (
             !selectedCountry ||
             !address.trim() ||
             !phone.trim() ||
-            !whatsapp.trim() ||
-            !email_customer_care.trim() ||
-            !email_sales.trim() ||
-            !email_business.trim() ||
-            !social_linkedin.trim() ||
-            !social_instagram.trim() ||
-            !social_facebook.trim() ||
-            !social_twitter.trim() ||
-            !local_modal_map_src.trim()
+            !whatsapp.trim()
         ) {
-            setMessage('Error: All fields are mandatory. Please fill out the entire form.');
+            setMessage('Error: Country, Address, Phone, and WhatsApp are mandatory. Please fill out these fields.');
             return;
         }
 
@@ -77,9 +69,9 @@ const CreateRegionPage = () => {
             social_facebook, 
             social_twitter, 
             local_modal_map_src,
-            email_customer_care, // New
-            email_sales,         // New
-            email_business       // New
+            email_customer_care, 
+            email_sales,         
+            email_business       
         };
 
         try {
@@ -116,6 +108,7 @@ const CreateRegionPage = () => {
                         <fieldset className="border border-slate-300 rounded-lg p-6">
                             <legend className="px-2 text-lg font-semibold text-[#243670]">Region Details</legend>
                             <div>
+                                {/* Input Heading: Select Country/Region */}
                                 <label className="block text-sm font-semibold text-gray-600 mb-2">Select Country/Region</label>
                                 <Select
                                     options={countryOptions}
@@ -123,7 +116,7 @@ const CreateRegionPage = () => {
                                     onChange={handleCountryChange}
                                     className="text-lg"
                                     placeholder="Search and select a country..."
-                                    // The JS validation in handleSubmit handles this component
+                                    // This field is mandatory via JS validation in handleSubmit
                                 />
                             </div>
                         </fieldset>
@@ -132,11 +125,13 @@ const CreateRegionPage = () => {
                             <legend className="px-2 text-lg font-semibold text-[#243670]">Contact & Content</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="md:col-span-2">
+                                    {/* Input Heading: Address */}
                                     <label className="block text-sm font-semibold text-gray-600 mb-2">Address</label>
                                     <textarea placeholder="Enter full address, one line per line" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} rows="3" required></textarea>
                                 </div>
                                 
                                 <div>
+                                    {/* Input Heading: Phone */}
                                     <label className="block text-sm font-semibold text-gray-600 mb-2">Phone</label>
                                     <PhoneInput
                                         country={selectedCountry ? selectedCountry.value.toLowerCase() : 'us'}
@@ -144,11 +139,12 @@ const CreateRegionPage = () => {
                                         onChange={setPhone}
                                         placeholder="Enter phone number..."
                                         inputClass={inputClass}
-                                        // The JS validation in handleSubmit handles this component
+                                        // This field is mandatory via JS validation in handleSubmit
                                     />
                                 </div>
                                 
                                 <div>
+                                    {/* Input Heading: WhatsApp */}
                                     <label className="block text-sm font-semibold text-gray-600 mb-2">WhatsApp</label>
                                     <PhoneInput
                                         country={selectedCountry ? selectedCountry.value.toLowerCase() : 'us'}
@@ -156,23 +152,55 @@ const CreateRegionPage = () => {
                                         onChange={setWhatsapp}
                                         placeholder="Enter WhatsApp number..."
                                         inputClass={inputClass}
-                                        // The JS validation in handleSubmit handles this component
+                                        // This field is mandatory via JS validation in handleSubmit
                                     />
                                 </div>
 
-                                {/* --- (3) NEW JSX for email inputs --- */}
-                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Customer Care Email</label><input type="email" placeholder="care@example.com" value={email_customer_care} onChange={(e) => setEmailCustomerCare(e.target.value)} className={inputClass} required /></div>
-                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Sales Email</label><input type="email" placeholder="sales@example.com" value={email_sales} onChange={(e) => setEmailSales(e.target.value)} className={inputClass} required /></div>
-                                <div><label className="block text-sm font-semibold text-gray-600 mb-2">Business Email</label><input type="email" placeholder="info@example.com" value={email_business} onChange={(e) => setEmailBusiness(e.target.value)} className={inputClass} required /></div>
+                                {/* --- (3) MODIFICATION: NEW JSX for email inputs (removed 'required') --- */}
+                                <div>
+                                    {/* Input Heading: Customer Care Email */}
+                                    <label className="block text-sm font-semibold text-gray-600 mb-2">Customer Care Email</label>
+                                    <input type="email" placeholder="care@example.com" value={email_customer_care} onChange={(e) => setEmailCustomerCare(e.target.value)} className={inputClass} />
+                                </div>
+                                <div>
+                                    {/* Input Heading: Sales Email */}
+                                    <label className="block text-sm font-semibold text-gray-600 mb-2">Sales Email</label>
+                                    <input type="email" placeholder="sales@example.com" value={email_sales} onChange={(e) => setEmailSales(e.target.value)} className={inputClass} />
+                                </div>
+                                <div>
+                                    {/* Input Heading: Business Email */}
+                                    <label className="block text-sm font-semibold text-gray-600 mb-2">Business Email</label>
+                                    <input type="email" placeholder="info@example.com" value={email_business} onChange={(e) => setEmailBusiness(e.target.value)} className={inputClass} />
+                                </div>
                                 
                                 <div className='md:col-span-2 border-t pt-6 mt-2'>
                                     <h3 className='text-md font-semibold text-gray-500 mb-4 text-center'>Social Media Links</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">LinkedIn URL</label><input type="url" placeholder="https://linkedin.com/..." value={social_linkedin} onChange={(e) => setLinkedin(e.target.value)} className={inputClass} required /></div>
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Instagram URL</label><input type="url" placeholder="https://instagram.com/..." value={social_instagram} onChange={(e) => setInstagram(e.target.value)} className={inputClass} required /></div>
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Facebook URL</label><input type="url" placeholder="https://facebook.com/..." value={social_facebook} onChange={(e) => setFacebook(e.target.value)} className={inputClass} required /></div>
-                                        <div><label className="block text-sm font-semibold text-gray-600 mb-2">Twitter URL</label><input type="url" placeholder="https://twitter.com/..." value={social_twitter} onChange={(e) => setTwitter(e.target.value)} className={inputClass} required /></div>
-                                        <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-600 mb-2">Local Map Embed Source (URL)</label><input type="url" placeholder="Google Maps embed URL..." value={local_modal_map_src} onChange={(e) => setMapSrc(e.target.value)} className={inputClass} required /></div>
+                                        <div>
+                                            {/* Input Heading: LinkedIn URL */}
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">LinkedIn URL</label>
+                                            <input type="url" placeholder="https://linkedin.com/..." value={social_linkedin} onChange={(e) => setLinkedin(e.target.value)} className={inputClass} />
+                                        </div>
+                                        <div>
+                                            {/* Input Heading: Instagram URL */}
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">Instagram URL</label>
+                                            <input type="url" placeholder="https://instagram.com/..." value={social_instagram} onChange={(e) => setInstagram(e.target.value)} className={inputClass} />
+                                        </div>
+                                        <div>
+                                            {/* Input Heading: Facebook URL */}
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">Facebook URL</label>
+                                            <input type="url" placeholder="https://facebook.com/..." value={social_facebook} onChange={(e) => setFacebook(e.target.value)} className={inputClass} />
+                                        </div>
+                                        <div>
+                                            {/* Input Heading: Twitter URL */}
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">Twitter URL</label>
+                                            <input type="url" placeholder="https://twitter.com/..." value={social_twitter} onChange={(e) => setTwitter(e.target.value)} className={inputClass} />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            {/* Input Heading: Local Map Embed Source (URL) */}
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">Local Map Embed Source (URL)</label>
+                                            <input type="url" placeholder="Google Maps embed URL..." value={local_modal_map_src} onChange={(e) => setMapSrc(e.target.value)} className={inputClass} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

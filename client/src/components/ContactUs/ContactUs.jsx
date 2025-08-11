@@ -834,7 +834,7 @@ const ContactUs = () => {
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            <span className="text-sm">Looks good</span>
+            <span className="text-sm"></span>
           </div>
         )}
       </div>
@@ -878,7 +878,7 @@ const ContactUs = () => {
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            <span className="text-sm">Looks good</span>
+            <span className="text-sm"></span>
           </div>
         )}
       </div>
@@ -925,7 +925,7 @@ const ContactUs = () => {
             d="M5 13l4 4L19 7"
           />
         </svg>
-        <span className="text-sm">Looks good</span>
+        <span className="text-sm"></span>
       </div>
     )}
   </div>
@@ -969,7 +969,7 @@ const ContactUs = () => {
             d="M5 13l4 4L19 7"
           />
         </svg>
-        <span className="text-sm">Looks good</span>
+        <span className="text-sm"></span>
       </div>
     )}
   </div>

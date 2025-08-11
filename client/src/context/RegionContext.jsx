@@ -1,17 +1,18 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const RegionContext = createContext();
-
-// The base URL for your backend API
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
 export const RegionProvider = ({ children }) => {
-  const [region, setRegion] = useState('bahrain'); // Default region code
-  const [content, setContent] = useState(null); // Will hold all dynamic content from API
-  const [isLoading, setIsLoading] = useState(true);
-  const [availableRegions, setAvailableRegions] = useState([]); // For the dropdown
+  const [region, setRegion] = useState(null);
+  const [content, setContent] = useState(null);
+  const [availableRegions, setAvailableRegions] = useState([]);
 
-  // Function to fetch content for a given region code
+  // --- KEY CHANGE: Two separate loading states ---
+  const [isInitializing, setIsInitializing] = useState(true); // For the very first page load
+  const [isChangingRegion, setIsChangingRegion] = useState(false); // For subsequent region switches
+
+  // This function fetches data and updates state.
   const fetchContentForRegion = async (regionCode) => {
     try {
       const response = await fetch(`${API_URL}/content/${regionCode}`);
@@ -24,19 +25,18 @@ export const RegionProvider = ({ children }) => {
       }
       const data = await response.json();
       setContent(data);
-      setRegion(data.code); // Ensure the state reflects the successfully fetched region
+      setRegion(data.code);
     } catch (error) {
       console.error("Failed to fetch content:", error);
-      setContent(null); // Set content to null on failure
+      setContent(null);
     }
   };
 
-  // Effect to detect region on initial load
+  // Effect for initial load (only runs once)
   useEffect(() => {
     const initializeRegion = async () => {
-      setIsLoading(true);
+      setIsInitializing(true); // Start initial load
 
-      // --- KEY CHANGE 1: Fetch available regions FIRST ---
       let regionsData = [];
       try {
         const regionsResponse = await fetch(`${API_URL}/regions`);
@@ -44,74 +44,66 @@ export const RegionProvider = ({ children }) => {
         setAvailableRegions(regionsData);
       } catch (error) {
         console.error("Could not fetch available regions:", error);
-        // We can continue, but IP detection might fail to match.
       }
 
-      // --- Check for a user's manual selection first ---
       const sessionRegion = sessionStorage.getItem('userSelectedRegion');
       if (sessionRegion) {
-        setRegion(sessionRegion);
         await fetchContentForRegion(sessionRegion);
       } else {
-        // --- KEY CHANGE 2: Improved IP Detection Logic ---
         try {
-          const response = await fetch('https://gvs-cargo-dynamic.onrender.com/api/detect-region');
+          const response = await fetch(`${API_URL}/detect-region`);
           const data = await response.json();
-          const detectedCountryCode = data.countryCode; 
-
-         
           const countryToRegionCodeMap = {
-              'BH': 'bahrain',
-              'AE': 'uae',
-              'SA': 'ksa',
-              'IN': 'india', 
-              'SG': 'singapore',
+            'BH': 'bahrain', 'AE': 'uae', 'SA': 'ksa',
+            'IN': 'india', 'SG': 'singapore',
           };
-          
-          const potentialRegionCode = countryToRegionCodeMap[detectedCountryCode];
-
-          
+          const potentialRegionCode = countryToRegionCodeMap[data.countryCode];
           const isValidRegion = regionsData.find(r => r.code === potentialRegionCode);
-          
-          let finalRegion = 'bahrain'; 
-          if (isValidRegion) {
-            finalRegion = potentialRegionCode; 
-            console.log(`IP detected region '${finalRegion}' which is valid.`);
-          } else {
-            console.log(`IP detected country '${detectedCountryCode}', but no matching region found. Defaulting to Bahrain.`);
-          }
-
-          setRegion(finalRegion);
-          await fetchContentForRegion(finalRegion);
-
+          await fetchContentForRegion(isValidRegion ? potentialRegionCode : 'bahrain');
         } catch (error) {
-          console.error("Could not detect region via IP, defaulting to Bahrain.", error);
-          setRegion('bahrain');
+          console.error("IP detection failed, defaulting to Bahrain.", error);
           await fetchContentForRegion('bahrain');
         }
       }
-      setIsLoading(false);
+
+      setIsInitializing(false); // End initial load
     };
-
     initializeRegion();
-  }, []); // Empty dependency array, runs once on mount
+  }, []);
 
-  
+  // Function for handling user-triggered region changes
   const handleSetRegion = async (newRegion) => {
-    setIsLoading(true);
+    if (newRegion === region) return;
+
+    setIsChangingRegion(true); // Start the "sexy" loader
     sessionStorage.setItem('userSelectedRegion', newRegion);
-    await fetchContentForRegion(newRegion);
-  
-    setIsLoading(false);
+
+    const dataFetchPromise = fetchContentForRegion(newRegion);
+    const timerPromise = new Promise(resolve => setTimeout(resolve, 1800));
+
+    try {
+      await Promise.all([dataFetchPromise, timerPromise]);
+    } catch (error) {
+      console.error("Error during region change:", error);
+    } finally {
+      setIsChangingRegion(false); // End the "sexy" loader
+    }
+  };
+
+  const value = {
+    region,
+    setRegion: handleSetRegion,
+    isInitializing,
+    isChangingRegion, // Exporting the new state
+    content,
+    availableRegions,
   };
 
   return (
-    <RegionContext.Provider value={{ region, setRegion: handleSetRegion, isLoading, content, availableRegions }}>
+    <RegionContext.Provider value={value}>
       {children}
     </RegionContext.Provider>
   );
 };
 
-export const useRegion = () => {
-  return useContext(RegionContext);
-};
+export const useRegion = () => useContext(RegionContext);

@@ -29,55 +29,74 @@ import Incoterms from "./components/Incoterms/Incoterms";
 import ContactUs from "./components/ContactUs/ContactUs";
 import Offers from "./components/Offers/Offers";
 import Testimonials from "./components/Testimonials/Testimonials";
-// ... any other public components
+import RegionTransitionOverlay from './components/RegionTransitionOverlay/RegionTransitionOverlay';
 
-// ========= NEW ADMIN PANEL IMPORTS =========
+
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import RegionEditForm from './pages/Admin/RegionEditForm';
-import ProtectedRoute from './components/Auth/ProtectedRoute'; 
-
-// ========= CONTEXT PROVIDER =========
-import { RegionProvider } from "./context/RegionContext";
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminSignUp from './pages/Admin/AdminSignUp';
 import CreateRegionPage from './pages/Admin/CreateRegionPage';
 
 
+import { RegionProvider, useRegion } from "./context/RegionContext";
+
+
 const MainLayout = () => {
+
+  const { isInitializing, isChangingRegion, region, availableRegions } = useRegion();
+
+
+  if (isInitializing) {
+    return <GlobalLoader />;
+  }
+
+
+  const currentRegionData = availableRegions.find(r => r.code === region);
+  const regionName = currentRegionData ? currentRegionData.name : 'Loading...';
+  const regionFlag = currentRegionData ? currentRegionData.country_flag : '🌍';
+
+  // Render the full app layout
   return (
     <>
-      <GlobalLoader />
+      <RegionTransitionOverlay
+        isVisible={isChangingRegion} // Controlled by region changes only
+        regionName={regionName}
+        regionFlag={regionFlag}
+      />
+
+      {/* The GlobalLoader is no longer needed here */}
       <Navbar />
       <ChatWidget />
-      {/* This is where all your public pages will be rendered */}
       <main>
         <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/whoWeAre" element={<AboutSection />} />
-            <Route path="/whereServe" element={<WhereBrazil />} />
-            <Route path="/OperateWorld" element={<OperateWorld />} />
-            <Route path="/missionvisionandvalues" element={<MissionVissionAndValues />} />
-            <Route path="/airFreight" element={<AirFreightSection />} />
-            <Route path="/seaFreight" element={<SeaFreight />} />
-            <Route path="/roadFreight" element={<RoadFreight />} />
-            <Route path="/stuffingUnloading" element={<StuffingUnloading />} />
-            <Route path ="/lcl" element={<LCL/>}/>
-            <Route path ="/fcl" element={<FCL/>}/>
-            <Route path="/customClearance" element={<CustomClearance />} />
-            <Route path="/dgr" element={<DGR />} />
-            <Route path="/inspection" element={<Inspection />} />
-            <Route path="/packaging" element={<Packaging />} />
-            <Route path="/storage" element={<Storages />} />
-            <Route path="/commercial" element={<Commercial />} />
-            <Route path="/insurance" element={<Insurance />} />
-            <Route path="/container" element={<Containers />} />
-            <Route path="/incoTerms" element={<Incoterms />} />
-            <Route path="/contactUs" element={<ContactUs />} />
-            <Route path="/offers" element={<Offers />} />
-            <Route path="/testimonials" element={<Testimonials />} />
-            
-            {/* You can add a 404 Not Found route here for the public site */}
-            <Route path="*" element={<div><h2>404 Page Not Found</h2></div>} />
+          <Route path="/" element={<Home />} />
+          <Route path="/whoWeAre" element={<AboutSection />} />
+          <Route path="/whereServe" element={<WhereBrazil />} />
+          <Route path="/OperateWorld" element={<OperateWorld />} />
+          <Route path="/missionvisionandvalues" element={<MissionVissionAndValues />} />
+          <Route path="/airFreight" element={<AirFreightSection />} />
+          <Route path="/seaFreight" element={<SeaFreight />} />
+          <Route path="/roadFreight" element={<RoadFreight />} />
+          <Route path="/stuffingUnloading" element={<StuffingUnloading />} />
+          <Route path ="/lcl" element={<LCL/>}/>
+          <Route path ="/fcl" element={<FCL/>}/>
+          <Route path="/customClearance" element={<CustomClearance />} />
+          <Route path="/dgr" element={<DGR />} />
+          <Route path="/inspection" element={<Inspection />} />
+          <Route path="/packaging" element={<Packaging />} />
+          <Route path="/storage" element={<Storages />} />
+          <Route path="/commercial" element={<Commercial />} />
+          <Route path="/insurance" element={<Insurance />} />
+          <Route path="/container" element={<Containers />} />
+          <Route path="/incoTerms" element={<Incoterms />} />
+          <Route path="/contactUs" element={<ContactUs />} />
+          <Route path="/offers" element={<Offers />} />
+          <Route path="/testimonials" element={<Testimonials />} />
+
+          {/* Fallback for any unknown public routes */}
+          <Route path="*" element={<div><h2>404 Page Not Found</h2></div>} />
         </Routes>
       </main>
       <Footer />
@@ -86,25 +105,22 @@ const MainLayout = () => {
 };
 
 
-
 function App() {
   return (
     <Router>
       <RegionProvider>
         <Routes>
-      
+          {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/create-super-user-access-a9b3c7d1" element={<AdminSignUp />} />
           <Route element={<ProtectedRoute />}>
-           
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/add-region" element={<CreateRegionPage />} />
             <Route path="/admin/edit/:regionCode" element={<RegionEditForm />} />
           </Route>
-          
-       
-          <Route path="/*" element={<MainLayout />} />
 
+          {/* Public-Facing Site Routes */}
+          <Route path="/*" element={<MainLayout />} />
         </Routes>
       </RegionProvider>
     </Router>
