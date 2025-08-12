@@ -112,50 +112,71 @@ const CreateRegionPage = () => {
     setWhatsappSupport("");
   };
 
-  const handleConfirmCreation = async () => {
-    setIsSubmitting(true);
-    setMessage("");
-    const token = localStorage.getItem("adminToken");
 
-    const payload = {
-      name: selectedCountry.label,
-      code: selectedCountry.label
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, ""),
-      country_flag: countryFlagEmoji.get(selectedCountry.value).emoji,
-      address: address.split("\n").filter((line) => line.trim() !== ""),
-      phone,
-      whatsapp,
-      whatsapp_sales,
-      whatsapp_support,
-      social_linkedin,
-      social_instagram,
-      social_facebook,
-      social_twitter,
-      local_modal_map_src,
-      email_customer_care,
-      email_sales,
-      email_business,
-    };
 
-    try {
-      const response = await fetch(`${API_URL}/regions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: token },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || "Failed to create region.");
-      navigate("/admin/dashboard");
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-      setIsModalOpen(false);
-    } finally {
-      setIsSubmitting(false);
-    }
+const handleConfirmCreation = async () => {
+  setIsSubmitting(true);
+  setMessage("");
+
+  const token = localStorage.getItem("adminToken");
+
+
+  const payload = {
+    name: selectedCountry.label,
+    code: selectedCountry.label
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, ""),
+    country_flag: countryFlagEmoji.get(selectedCountry.value).emoji,
+    address: address.split("\n").filter((line) => line.trim() !== ""),
+    phone,
+    whatsapp,
+    whatsapp_sales,
+    whatsapp_support,
+    social_linkedin,
+    social_instagram,
+    social_facebook,
+    social_twitter,
+    local_modal_map_src,
+    email_customer_care,
+    email_sales,
+    email_business,
   };
+
+  try {
+
+    const url = `${API_URL}/regions`;
+
+
+    const authHeader = token ? `Bearer ${token}` : '';
+
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      
+        "Authorization": authHeader 
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to create region.");
+    }
+
+    // If successful, navigate to the dashboard.
+    navigate("/admin/dashboard");
+
+  } catch (error) {
+    setMessage(`Error: ${error.message}`);
+    setIsModalOpen(false);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();

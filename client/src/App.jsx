@@ -38,21 +38,21 @@ import RegionEditForm from './pages/Admin/RegionEditForm';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminSignUp from './pages/Admin/AdminSignUp';
 import CreateRegionPage from './pages/Admin/CreateRegionPage';
-
+import ExcelUploadPanel from './components/ExcelUploadPanel/ExcelUploadPanel';
 import { RegionProvider, useRegion } from "./context/RegionContext";
+import { Toaster } from 'react-hot-toast';
 
 // The API URL, make sure this is correct
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
 const MainLayout = () => {
   const { isInitializing, isChangingRegion, region, availableRegions } = useRegion();
-  // This state will now be populated by the useEffect hook
+
   const [regionContent, setRegionContent] = useState(null);
 
-  // --- ADD THIS useEffect HOOK ---
-  // This hook will run whenever the 'region' changes.
+
   useEffect(() => {
-    // If there is no region selected yet, do nothing.
+  
     if (!region) return;
 
     const fetchRegionContent = async () => {
@@ -62,17 +62,16 @@ const MainLayout = () => {
           throw new Error('Failed to fetch region content');
         }
         const data = await response.json();
-        setRegionContent(data); // <-- IMPORTANT: Update the state with fetched data
+        setRegionContent(data);
       } catch (error) {
         console.error("Error fetching content for region:", region, error);
-        setRegionContent(null); // Reset on error
+        setRegionContent(null); 
       }
     };
 
     fetchRegionContent();
-  }, [region]); // <-- Dependency: Re-run this effect when 'region' changes
+  }, [region]); 
 
-  // --- END OF ADDED CODE ---
 
 
   if (isInitializing) {
@@ -93,11 +92,7 @@ const MainLayout = () => {
 
       <Navbar />
       
-      {/* 
-        This will now work!
-        When regionContent is updated, this component will re-render
-        and pass the correct numbers to the ChatWidget.
-      */}
+
       <ChatWidget 
         salesNumber={regionContent?.whatsapp_sales}
         supportNumber={regionContent?.whatsapp_support}
@@ -139,6 +134,14 @@ const MainLayout = () => {
 function App() {
   return (
     <Router>
+      <Toaster 
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          // Default options for all toasts
+          duration: 5000,
+        }}
+      />
       <RegionProvider>
         <Routes>
           {/* Admin Routes */}
@@ -148,6 +151,7 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/add-region" element={<CreateRegionPage />} />
             <Route path="/admin/edit/:regionCode" element={<RegionEditForm />} />
+            <Route path="/admin/excel-management" element={<ExcelUploadPanel />} />
           </Route>
 
           {/* Public-Facing Site Routes */}

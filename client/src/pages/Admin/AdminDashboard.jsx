@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 // Import the icon for our new modal
 import { FiLogOut } from 'react-icons/fi';
+import DashboardToggle from '../../components/DashboardToggle/DashboardToggle';
 
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
@@ -125,26 +126,51 @@ const AdminDashboard = () => {
         navigate('/admin/login');
     };
 
-    const handleDeleteRegion = async (regionCode, regionName) => {
-        if (!window.confirm(`Are you sure you want to delete "${regionName}"? This action cannot be undone.`)) {
-            return;
-        }
+
+
+const handleDeleteRegion = async (regionCode, regionName) => {
+    // The confirmation dialog is good, no changes here.
+    if (!window.confirm(`Are you sure you want to delete "${regionName}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        // --- THIS IS THE FIX ---
+
+        // 1. Get the raw token from localStorage.
         const token = localStorage.getItem('adminToken');
-        try {
-            const response = await fetch(`${API_URL}/regions/${regionCode}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': token },
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to delete region.');
-            }
-            setRegions(prevRegions => prevRegions.filter(region => region.code !== regionCode));
-        } catch (error) {
-            console.error('Deletion failed:', error);
-            alert(`Error: ${error.message}`);
+
+        // 2. Create the correctly formatted Authorization header string.
+        const authHeader = token ? `Bearer ${token}` : '';
+
+        // 3. Define the URL.
+        const url = `${API_URL}/regions/${regionCode}`;
+
+        // 4. Make the fetch call with the correct header.
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                // We don't need Content-Type for a DELETE request with no body.
+                // The Authorization header is the important one.
+                'Authorization': authHeader 
+            },
+        });
+
+        // --- END OF FIX ---
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to delete region.');
         }
-    };
+        
+        // This part is correct, it updates the UI after a successful delete.
+        setRegions(prevRegions => prevRegions.filter(region => region.code !== regionCode));
+
+    } catch (error) {
+        console.error('Deletion failed:', error);
+        alert(`Error: ${error.message}`);
+    }
+};
 
     return (
         <>
@@ -167,6 +193,7 @@ const AdminDashboard = () => {
                             <h1 className="text-5xl font-light text-[#243670] tracking-widest uppercase">Dashboard</h1>
                             <p className="text-gray-500 mt-2">Holographic Content Management Interface v2.1</p>
                         </div>
+                        <DashboardToggle activeView="dashboard" />
                         <button 
                             // This button now opens the modal instead of logging out directly
                             onClick={() => setIsLogoutModalOpen(true)} 

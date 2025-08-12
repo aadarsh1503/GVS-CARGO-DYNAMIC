@@ -6,7 +6,7 @@ export const websiteContent = {
       countryName: "Bahrain",
       countryEmoji: "🇧🇭",
   
-      // >> Navbar Content
+   
       welcomeMessage: "Welcome to GVS Cargo & Logistics - Bahrain",
       address: [
         "OFFICE 22, BLDG 661, RD 1208,",

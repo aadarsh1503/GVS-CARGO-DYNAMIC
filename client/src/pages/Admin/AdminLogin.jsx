@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Import the new eye icons
 import { FiUser, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import LOGO from "./LOGO.png"; // Make sure this path is correct
 
 const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 
-/**
- * Injects our custom, fluid CSS animations into the page.
- * This is how we achieve the magic without touching config files.
- */
 const StyleInjector = () => (
     <style>
         {`
@@ -25,14 +21,12 @@ const StyleInjector = () => (
     </style>
 );
 
-
 const AdminLogin = () => {
-    // --- State management, now including isLoading and password visibility ---
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false); // State for password visibility
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
@@ -40,8 +34,7 @@ const AdminLogin = () => {
         setIsLoading(true);
         setError('');
 
-        // Simulate a network request to show off the beautiful loading state
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         try {
             const response = await fetch(`${API_URL}/admin/login`, {
@@ -49,20 +42,26 @@ const AdminLogin = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
+
             const data = await response.json();
+
             if (!response.ok) {
                 throw new Error(data.message || 'Login Failed');
             }
-            localStorage.setItem('adminToken', data.token);
-            navigate('/admin/dashboard');
+
+            if (data.adminToken) {
+                localStorage.setItem('adminToken', data.adminToken);
+                navigate('/admin/dashboard');
+            } else {
+                throw new Error('Login response did not include a token.');
+            }
         } catch (err) {
-            setError(err.message);
+            setError(err.message || 'An unknown error occurred.');
         } finally {
             setIsLoading(false);
         }
     };
-    
-    // Toggle function for password visibility
+
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
@@ -70,9 +69,10 @@ const AdminLogin = () => {
     return (
         <>
             <StyleInjector />
-            <div className="relative flex items-center justify-center min-h-screen font-sans overflow-hidden">
-                {/* The beautiful, animated gradient background */}
-                <div 
+
+            <div className="relative flex flex-col items-center justify-center min-h-screen font-sans overflow-hidden p-4">
+
+                <div
                     className="absolute inset-0 z-0"
                     style={{
                         backgroundImage: 'linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)',
@@ -81,20 +81,17 @@ const AdminLogin = () => {
                     }}
                 />
 
-                {/* The Floating Glass Card */}
+      
+                <img
+                    src={LOGO}
+                    alt="GVS Cargo Logo"
+                    className="w-64 h-auto mb-8 z-10"
+                />
+
                 <div className="relative z-10 w-full max-w-md p-8 transition-all duration-500 bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-2xl">
-                    
-                    {/* We use a key on the child div to force a remount (and thus a fade transition) when isLoading changes */}
                     <div key={isLoading ? 'loading' : 'form'} className="transition-opacity duration-500 animate-in fade-in">
-                        
                         {isLoading ? (
-                            // --- THE SEXY RIPPLE LOADING STATE ---
-                            <div className="flex flex-col items-center justify-center space-y-10 h-96">
-                                <img 
-                                    src="https://gvscargo.com/assets/GVS-Yttnar72.png" 
-                                    alt="GVS Logo"
-                                    className="w-24 h-auto"
-                                />
+                            <div className="flex flex-col items-center justify-center space-y-6 py-16">
                                 <div className="flex items-center justify-center space-x-2">
                                     <div className="w-4 h-4 rounded-full bg-[#243670]" style={{ animation: 'ripple-pulse 1.5s ease-in-out infinite' }}></div>
                                     <div className="w-4 h-4 rounded-full bg-[#243670]" style={{ animation: 'ripple-pulse 1.5s ease-in-out infinite', animationDelay: '0.2s' }}></div>
@@ -103,20 +100,13 @@ const AdminLogin = () => {
                                 <p className="text-[#243670]/80">Authenticating...</p>
                             </div>
                         ) : (
-                            // --- THE ELEGANT LOGIN FORM ---
-                            <div className="space-y-8 h-96 flex flex-col justify-center">
+                            <div className="space-y-8">
                                 <div className="text-center">
-                                    <img 
-                                        src="https://gvscargo.com/assets/GVS-Yttnar72.png" 
-                                        alt="GVS Cargo Logo"
-                                        className="w-32 h-auto mx-auto mb-4"
-                                    />
                                     <h2 className="text-3xl font-bold text-[#243670]">Admin Access</h2>
                                     <p className="text-[#243670]/70">Sign in to continue</p>
                                 </div>
-                                
+
                                 <form onSubmit={handleLogin} className="space-y-6">
-                                    {/* Username Input with "Aura" Focus */}
                                     <div className="relative">
                                         <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-[#243670]/50" />
                                         <input
@@ -129,7 +119,6 @@ const AdminLogin = () => {
                                         />
                                     </div>
 
-                                    {/* Password Input with "Aura" Focus and Eye Button */}
                                     <div className="relative">
                                         <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#243670]/50" />
                                         <input
@@ -149,16 +138,15 @@ const AdminLogin = () => {
                                             {showPassword ? <FiEyeOff /> : <FiEye />}
                                         </button>
                                     </div>
-                                    
+
                                     {error && (
                                         <div className="text-center text-red-800 bg-red-200/50 p-2 rounded-lg text-sm">
                                             <p>{error}</p>
                                         </div>
                                     )}
-                                    
-                                    {/* Shimmering Gradient Button */}
-                                    <button 
-                                        type="submit" 
+
+                                    <button
+                                        type="submit"
                                         disabled={isLoading}
                                         className="w-full font-bold text-white py-3 rounded-xl bg-gradient-to-r from-[#243670] to-[#5b72b4] shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#5b72b4]/50 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >

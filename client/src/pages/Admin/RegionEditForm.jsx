@@ -58,42 +58,62 @@ const RegionEditForm = () => {
         setContent(prevContent => ({ ...prevContent, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSaving(true);
-        setMessage('');
-        
-        const token = localStorage.getItem('adminToken');
-        const submissionData = { ...content };
-        if (submissionData.address) {
-            submissionData.address = submissionData.address.split('\n').filter(line => line.trim() !== '');
-        }
-        
-        const fieldsToDelete = ['id', 'region_id', 'name', 'code', 'country_flag', 'updated_at', 'welcome_message', 'operate_heading', 'local_button_text', 'global_button_text', 'local_modal_title', 'local_modal_description', 'global_modal_title', 'global_modal_description', 'close_button_text', 'operate_in_country_title', 'operate_in_country_desc'];
-        fieldsToDelete.forEach(field => delete submissionData[field]);
+// Replace the entire handleSubmit function in your RegionEditForm.jsx file with this.
 
-        try {
-            const response = await fetch(`${API_URL}/content/${regionCode}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': token },
-                body: JSON.stringify(submissionData),
-            });
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setMessage('');
+    
+    // 1. Get the raw token (e.g., "eyJ...") from localStorage.
+    const token = localStorage.getItem('adminToken');
+    
+    // 2. Prepare the data for submission (your logic for this part is correct).
+    const submissionData = { ...content };
+    if (submissionData.address) {
+        submissionData.address = submissionData.address.split('\n').filter(line => line.trim() !== '');
+    }
+    const fieldsToDelete = ['id', 'region_id', 'name', 'code', 'country_flag', 'updated_at', 'welcome_message', 'operate_heading', 'local_button_text', 'global_button_text', 'local_modal_title', 'local_modal_description', 'global_modal_title', 'global_modal_description', 'close_button_text', 'operate_in_country_title', 'operate_in_country_desc'];
+    fieldsToDelete.forEach(field => delete submissionData[field]);
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.message || 'Failed to update content');
-            }
-            const result = await response.json();
-            setMessage(result.message);
-            await fetchContent(); 
-            setTimeout(() => setMessage(''), 4000);
-        // --- FIX IS HERE ---
-        } catch (error) { 
-            setMessage(`Error: ${error.message}`);
-        } finally {
-            setIsSaving(false);
+    try {
+        // --- THIS IS THE FIX ---
+
+        // 3. Define the URL for the API endpoint.
+        const url = `${API_URL}/content/${regionCode}`;
+
+        // 4. Create the correctly formatted Authorization header string.
+        //    We add the "Bearer " prefix (with a space) to the raw token.
+        const authHeader = token ? `Bearer ${token}` : '';
+
+        // 5. Make the fetch call with the correct URL and the formatted header.
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': authHeader // Use the new, correctly formatted header variable
+            },
+            body: JSON.stringify(submissionData),
+        });
+        
+        // --- END OF FIX ---
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.message || 'Failed to update content');
         }
-    };
+
+        const result = await response.json();
+        setMessage(result.message);
+        await fetchContent(); 
+        setTimeout(() => setMessage(''), 4000);
+        
+    } catch (error) { 
+        setMessage(`Error: ${error.message}`);
+    } finally {
+        setIsSaving(false);
+    }
+};
     
     const coreFields = ['address', 'phone', 'whatsapp', 'whatsapp_sales', 'whatsapp_support'];
     const optionalFields = [

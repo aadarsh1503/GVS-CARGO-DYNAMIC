@@ -6,8 +6,7 @@ const API_URL = 'https://gvs-cargo-dynamic.onrender.com/api';
 const AdminSignUp = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    // REMOVED: No longer need state for the secret code
-    // const [signupSecret, setSignupSecret] = useState('');
+
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
