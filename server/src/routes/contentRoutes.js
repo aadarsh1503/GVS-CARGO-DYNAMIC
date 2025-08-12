@@ -7,21 +7,22 @@ const {
     updateContentByRegionCode,
     deleteRegionByCode
 } = require('../controllers/contentController');
-const { protect } = require('../middleware/authMiddleware');
+const { protectAdmin } = require('../middleware/authMiddleware');
 
 // --- Public Routes ---
-// Get all available regions for the dropdown
+// These routes are accessible to anyone.
 router.get('/regions', getAllRegions);
-// Get the content for a specific region
 router.get('/content/:regionCode', getContentByRegionCode);
 
-// --- Admin/Protected Routes ---
-// Add a new region and its content
-router.post('/regions', protect, createRegionWithContent);
-// Update a region's content
-router.put('/content/:regionCode', protect, updateContentByRegionCode);
 
 
-router.delete('/regions/:regionCode', protect, deleteRegionByCode); 
+
+router.post('/regions', protectAdmin, createRegionWithContent);
+
+
+router.put('/content/:regionCode', protectAdmin, updateContentByRegionCode);
+
+
+router.delete('/regions/:regionCode', protectAdmin, deleteRegionByCode); 
 
 module.exports = router;

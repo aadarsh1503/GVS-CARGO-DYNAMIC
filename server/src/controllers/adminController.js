@@ -2,14 +2,11 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// @desc    Authenticate admin & get token
-// @route   POST /api/admin/login
-// @access  Public
+
 const loginAdmin = async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // Check if admin exists
         const [rows] = await pool.query('SELECT * FROM admins WHERE username = ?', [username]);
         const admin = rows[0];
 
@@ -17,37 +14,43 @@ const loginAdmin = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Check if password matches
         const isMatch = await bcrypt.compare(password, admin.password_hash);
 
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // User matched, create JWT payload
         const payload = {
             id: admin.id,
             username: admin.username
         };
 
-        // Sign token
         jwt.sign(
             payload,
-            process.env.API_KEY, // Use the existing secret key
-            { expiresIn: '8h' }, // Token expires in 8 hours
+            process.env.JWT_SECRET,
+            { expiresIn: '8h' },
             (err, token) => {
-                if (err) throw err;
+                if (err) {
+                    console.error("JWT signing error:", err);
+                    // It's better to send a 500 error here
+                    return res.status(500).json({ message: "Could not generate token." });
+                }
+                
+
                 res.json({
                     success: true,
-                    token: 'Bearer ' + token
+              
+                    adminToken: token         
                 });
             }
         );
 
     } catch (error) {
+        console.error("Server error during login:", error);
         res.status(500).json({ message: 'Server error during login', error: error.message });
     }
 };
+
 const registerAdmin = async (req, res) => {
     // We only need username and password now
     const { username, password } = req.body;

@@ -1,27 +1,39 @@
 const jwt = require('jsonwebtoken');
 
-const protect = (req, res, next) => {
+// Middleware for ADMIN routes
+const protectAdmin = (req, res, next) => {
   let token;
+  const authHeader = req.headers.authorization;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+ 
+      token = authHeader.substring(7, authHeader.length);
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.API_KEY);
+  
+      if (!token || token === 'null' || token === 'undefined') {
+         
+          return res.status(401).json({ message: 'Not authorized, malformed token' });
+      }
 
-      // Attach user to the request
+
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.admin = decoded;
+      
+ 
       next();
-    } catch (error) {
-      res.status(401).json({ message: 'Not authorized, token failed' });
-    }
-  }
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    } catch (error) {
+
+      return res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+  } else {
+      
+      return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
-module.exports = { protect };
+
+module.exports = { protectAdmin };
