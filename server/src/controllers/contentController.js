@@ -107,8 +107,7 @@ const createRegionWithContent = async (req, res, next) => { // Use 'next' for er
       regionId = existingRegion.id;
 
       if (existingRegion.is_active === 1) {
-        // This is the critical part. We rollback and then we MUST stop.
-        // We will let the finally block handle the release.
+
         await connection.rollback();
         // The connection is now idle. Release it before sending the response.
         connection.release();

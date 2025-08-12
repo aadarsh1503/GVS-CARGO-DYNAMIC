@@ -32,16 +32,15 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // <-- 2nd backend se, good practice
+app.use(express.urlencoded({ extended: true })); 
 
 // --- API Routes ---
 app.use('/api', contentRoutes);
 app.use('/api/admin', adminRoutes);
-    // <-- 2nd backend ka user auth route
-app.use('/api/excels', excelRoutes);  // <-- 2nd backend ka excel route
-console.log('🔑 Verifying token with secret:', process.env.JWT_SECRET);
+app.use('/api/excels', excelRoutes);
+
 // -----------------
-// Existing route from 1st backend
+
 app.get('/api/detect-region', (req, res) => {
   const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '202.83.21.11' : req.ip; 
   const geo = geoip.lookup(ip);
@@ -52,20 +51,20 @@ app.get('/api/detect-region', (req, res) => {
   }
 });
 
-// Basic root route for health check
+
 app.get('/', (req, res) => {
     res.send('GVS Cargo Merged API is running...');
 });
 
-// --- Global Error Handler (Hamesha aakhir mein) ---
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// --- Start Server (from 1st backend, which is more robust) ---
+
 (async () => {
   try {
-    // Connection test is already in db.js, no need to do it again here.
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });

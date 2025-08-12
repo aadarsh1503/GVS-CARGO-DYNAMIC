@@ -8,9 +8,9 @@ const { protectAdmin } = require("../middleware/authMiddleware");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-console.log("✅ Excel routes file loaded (Corrected Version).");
 
-// Helper function (no changes)
+
+
 const formatFileObject = (dbRow) => {
   if (!dbRow) return null;
   return {
@@ -24,9 +24,8 @@ const formatFileObject = (dbRow) => {
 
 // --- ALL ROUTES BELOW ARE NOW PROTECTED ---
 
-// ROUTE: GET /api/excels/list
-// CORRECTED: Added 'protectAdmin'. A list of internal files should be private.
-router.get("/list", protectAdmin, async (req, res) => {
+
+router.get("/list", async (req, res) => {
   try {
     const sql = `
       SELECT id, file_name, file_url, file_size, uploaded_at 
@@ -42,15 +41,14 @@ router.get("/list", protectAdmin, async (req, res) => {
   }
 });
 
-// ROUTE: POST /api/excels/upload
-// The order is correct: check auth first, then handle file upload.
+
 router.post("/upload", protectAdmin, upload.single("excelFile"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded." });
       }
 
-      // 'protectAdmin' already ran, so req.admin is guaranteed to exist.
+      
       const userId = req.admin.id;
 
       const uploadResponse = await imagekit.upload({
@@ -82,8 +80,7 @@ router.post("/upload", protectAdmin, upload.single("excelFile"), async (req, res
   }
 );
 
-// ROUTE: PUT /api/excels/rename/:id
-// CORRECTED: Removed the duplicate 'protectAdmin' middleware.
+
 router.put("/rename/:id", protectAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -103,33 +100,53 @@ router.put("/rename/:id", protectAdmin, async (req, res) => {
   }
 });
 
-// ROUTE: DELETE /api/excels/delete/:id
-// CORRECTED: Removed the duplicate 'protectAdmin' middleware.
+
 router.delete("/delete/:id", protectAdmin, async (req, res) => {
-  const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-    const { id } = req.params;
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const { id } = req.params;
+  
+  
+      const [rows] = await connection.execute("SELECT file_id_imagekit FROM uploaded_excels WHERE id = ?", [id]);
+      if (rows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ message: "File not found in database." });
+      }
+      const imagekitFileId = rows[0].file_id_imagekit;
+  
 
-    const [rows] = await connection.execute("SELECT file_id_imagekit FROM uploaded_excels WHERE id = ?", [id]);
-    if (rows.length === 0) {
+      try {
+
+          await imagekit.deleteFile(imagekitFileId);
+  
+      } catch (imagekitError) {
+
+          if (imagekitError && imagekitError.message && imagekitError.message.includes('The requested file does not exist.')) {
+
+             
+          } else {
+
+              throw imagekitError;
+          }
+      }
+  
+
+      await connection.execute("DELETE FROM uploaded_excels WHERE id = ?", [id]);
+      
+      // 4. Commit the transaction
+      await connection.commit();
+      
+      res.status(200).json({ message: "File deleted successfully.", id });
+  
+    } catch (error) {
+      // This outer catch block will now only catch "hard" errors.
       await connection.rollback();
-      return res.status(404).json({ message: "File not found." });
+      console.error(`❌ [DELETE /delete] - FATAL DELETE ERROR for file ID ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to delete file due to a server or API error." });
+  
+    } finally {
+      if (connection) connection.release();
     }
-    const imagekitFileId = rows[0].file_id_imagekit;
-
-    await imagekit.deleteFile(imagekitFileId);
-    await connection.execute("DELETE FROM uploaded_excels WHERE id = ?", [id]);
-    await connection.commit();
-    
-    res.status(200).json({ message: "File deleted successfully.", id });
-  } catch (error) {
-    await connection.rollback();
-    console.error(`❌ [DELETE /delete] - DELETE ERROR for file ID ${req.params.id}:`, error);
-    res.status(500).json({ message: "Failed to delete file." });
-  } finally {
-    if (connection) connection.release();
-  }
-});
-
+  });
 module.exports = router;
