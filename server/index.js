@@ -42,41 +42,72 @@ app.use('/api/excels', excelRoutes);
 // -----------------
 
 // --- NEW AND IMPROVED /api/detect-region ROUTE ---
-app.get('/api/detect-region', async (req, res) => { // Assuming it's in a router file
+app.get('/api/detect-region', async (req, res) => {
   try {
-    res.setHeader('Cache-Control', 'no-store'); // Good practice
+    console.log("➡️ /api/detect-region endpoint hit");
 
-    const ip = req.headers['x-vercel-forwarded-for'] || req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
-    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '177.54.157.16' : ip; // Use Brazil IP for testing
+    // Set caching headers to prevent Vercel's Edge from serving a stale response.
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    console.log("✅ Cache headers set");
 
+    // Log all incoming headers related to IP
+    console.log("📥 Incoming IP headers =>", {
+      "x-vercel-forwarded-for": req.headers['x-vercel-forwarded-for'],
+      "x-forwarded-for": req.headers['x-forwarded-for'],
+      "remoteAddress": req.socket.remoteAddress
+    });
+
+    // Robust IP detection, prioritizing Vercel's specific header.
+    const ip = req.headers['x-vercel-forwarded-for'] 
+               || req.headers['x-forwarded-for']?.split(',').shift() 
+               || req.socket.remoteAddress;
+
+    console.log("🌐 Extracted raw IP =>", ip);
+
+    // For local development, use a public IP for testing.
+    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '146.70.241.122' : ip; 
+    console.log("✅ Final IP used for lookup =>", finalIp);
+
+    // Call the geo API
     const response = await axios.get(`http://ip-api.com/json/${finalIp}`);
+    console.log("🌍 Response from ip-api.com =>", response.data);
+
     const geoData = response.data;
 
     if (geoData.status === 'success') {
-      const countryName = geoData.country;
-
-      // Find a region in your DB that matches the detected country name.
-      // This assumes your region 'name' field is the full country name, e.g., "Brazil".
-      // Use a case-insensitive regex for better matching.
-      const matchedRegion = await Region.findOne({ name: new RegExp('^' + countryName + '$', 'i') });
+      console.log("✅ Geo lookup success. Data extracted:", {
+        country: geoData.country,
+        countryCode: geoData.countryCode,
+        region: geoData.regionName,
+        city: geoData.city,
+        isp: geoData.isp
+      });
 
       res.json({
         ip: finalIp,
         countryCode: geoData.countryCode,
         country: geoData.country,
-        // NEW: Return the matched region code, or a fallback of 'bahrain'
-        matchedRegionCode: matchedRegion ? matchedRegion.code : 'bahrain' 
+        region: geoData.regionName,
+        city: geoData.city,
+        lat: geoData.lat,
+        lon: geoData.lon,
+        timezone: geoData.timezone,
+        isp: geoData.isp
       });
 
+      console.log("📤 Response sent successfully");
     } else {
-      // If IP lookup fails, default to Bahrain
-      res.status(404).json({ ip: finalIp, error: 'Could not determine location.', matchedRegionCode: 'bahrain' });
+      console.warn("⚠️ Geo lookup failed. Message =>", geoData.message);
+      res.status(404).json({ ip: finalIp, error: 'Could not determine location from the API.', details: geoData.message });
     }
   } catch (error) {
-    console.error('Error in /detect-region:', error.message);
-    res.status(500).json({ error: 'Server error during region detection.', matchedRegionCode: 'bahrain' });
+    console.error("❌ Error fetching geolocation:", error.message);
+    res.status(500).json({ error: 'An error occurred while fetching geolocation data.' });
   }
 });
+
 // --- END OF NEW ROUTE ---
 
 
