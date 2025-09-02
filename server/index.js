@@ -51,7 +51,7 @@ app.get('/api/detect-region', async (req, res) => {
   try {
    
 
-    // Set caching headers to prevent stale responses
+ 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
