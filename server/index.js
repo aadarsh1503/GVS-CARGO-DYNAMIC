@@ -4,20 +4,24 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-// const geoip = require('geoip-lite'); // No longer needed for this route
-const axios = require('axios'); // <-- ADD THIS
-
-const db = require('./src/config/db');
+const axios = require('axios');
+const pool = require('./src/config/db');
+const db = require('./src/config/db'); // Note: 'db' and 'pool' are likely the same, you might only need one.
 const errorHandler = require('./src/middleware/errorHandler');
 
+// Route imports
 const contentRoutes = require('./src/routes/contentRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const excelRoutes = require('./src/routes/excelRoutes');   
 
-// const dotenv = require('dotenv'); // This is redundant, require('dotenv').config() is enough
-const app = express();
-// dotenv.config(); // This is also redundant
+// --- THE FIX ---
+// Destructure the 'default' export from the library to get the function directly.
+const { default: countryCodeEmoji } = require('country-code-emoji'); 
+// --- END OF FIX ---
 
+const app = express();
+
+// --- Middleware Setup ---
 app.use(cors({
   origin: [
     'http://localhost:5173',
@@ -40,87 +44,99 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/excels', excelRoutes);
 
 // -----------------
+const DEFAULT_REGION = 'bahrain'; 
 
-// --- NEW AND IMPROVED /api/detect-region ROUTE ---
+// --- /api/detect-region ROUTE ---
 app.get('/api/detect-region', async (req, res) => {
   try {
-    console.log("➡️ /api/detect-region endpoint hit");
+   
 
-    // Set caching headers to prevent Vercel's Edge from serving a stale response.
+    // Set caching headers to prevent stale responses
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    console.log("✅ Cache headers set");
 
-    // Log all incoming headers related to IP
-    console.log("📥 Incoming IP headers =>", {
-      "x-vercel-forwarded-for": req.headers['x-vercel-forwarded-for'],
-      "x-forwarded-for": req.headers['x-forwarded-for'],
-      "remoteAddress": req.socket.remoteAddress
-    });
-
-    // Robust IP detection, prioritizing Vercel's specific header.
+    // 1. Robust IP Detection
     const ip = req.headers['x-vercel-forwarded-for'] 
                || req.headers['x-forwarded-for']?.split(',').shift() 
                || req.socket.remoteAddress;
 
-    console.log("🌐 Extracted raw IP =>", ip);
+    // Use a public IP for local testing, otherwise use the detected IP
+    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '177.54.157.16' : ip; // Test IP for Brazil
+    
 
-    // For local development, use a public IP for testing.
-    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '146.70.241.122' : ip; 
-    console.log("✅ Final IP used for lookup =>", finalIp);
-
-    // Call the geo API
-    const response = await axios.get(`http://ip-api.com/json/${finalIp}`);
-    console.log("🌍 Response from ip-api.com =>", response.data);
-
-    const geoData = response.data;
+    // 2. Call the Geolocation API
+    const geoApiResponse = await axios.get(`http://ip-api.com/json/${finalIp}`);
+    const geoData = geoApiResponse.data;
 
     if (geoData.status === 'success') {
-      console.log("✅ Geo lookup success. Data extracted:", {
-        country: geoData.country,
-        countryCode: geoData.countryCode,
-        region: geoData.regionName,
-        city: geoData.city,
-        isp: geoData.isp
-      });
+      const detectedCountryCode = geoData.countryCode; // e.g., 'BR'
+      let matchedRegionCode = DEFAULT_REGION; // Default fallback
 
+      // 3. Convert Text Code to Emoji for DB Query
+      // This will now work correctly because countryCodeEmoji is a function.
+      const flagEmoji = countryCodeEmoji(detectedCountryCode); 
+      
+      if (flagEmoji) {
+       
+
+        // 4. Query the database using the EMOJI in the 'country_flag' column
+        const query = "SELECT code FROM regions WHERE country_flag = ? AND is_active = 1";
+        const [rows] = await pool.query(query, [flagEmoji]);
+
+        if (rows.length > 0) {
+          matchedRegionCode = rows[0].code;
+      
+        } else {
+          
+        }
+      } else {
+          
+      }
+      
+      // 5. Send the final response to the frontend
+      const responsePayload = {
+        ip: finalIp,
+        countryCode: detectedCountryCode,
+        country: geoData.country,
+        matchedRegionCode: matchedRegionCode
+      };
+
+      res.json(responsePayload);
+     
+      
+    } else {
+      // Handle cases where the geo-API fails
+     
       res.json({
         ip: finalIp,
-        countryCode: geoData.countryCode,
-        country: geoData.country,
-        region: geoData.regionName,
-        city: geoData.city,
-        lat: geoData.lat,
-        lon: geoData.lon,
-        timezone: geoData.timezone,
-        isp: geoData.isp
+        error: 'Could not determine location from the API.',
+        matchedRegionCode: DEFAULT_REGION
       });
-
-      console.log("📤 Response sent successfully");
-    } else {
-      console.warn("⚠️ Geo lookup failed. Message =>", geoData.message);
-      res.status(404).json({ ip: finalIp, error: 'Could not determine location from the API.', details: geoData.message });
     }
   } catch (error) {
-    console.error("❌ Error fetching geolocation:", error.message);
-    res.status(500).json({ error: 'An error occurred while fetching geolocation data.' });
+    // Handle server-level or database connection errors
+    console.error("❌ Critical error in /detect-region:", error.message);
+    res.status(500).json({ 
+        error: 'An error occurred during region detection.',
+        matchedRegionCode: DEFAULT_REGION
+    });
   }
 });
-
 // --- END OF NEW ROUTE ---
-
 
 app.get('/', (req, res) => {
     res.send('GVS Cargo Merged API is running...');
 });
 
+// --- Global Error Handler ---
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 (async () => {
   try {
+    // The server will start and listen on the specified port.
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
