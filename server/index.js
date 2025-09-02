@@ -28,7 +28,7 @@ app.use(cors({
     'https://cargo-new-ui.vercel.app',
     'https://cargo-backend-black.vercel.app',
     'https://gvs-bahrain-pa25.vercel.app',
-    'https://duplicate-cargo-qd4w.vercel.app/'
+    'https://duplicate-cargo-qd4w.vercel.app'
   ],
   credentials: true 
 }));
