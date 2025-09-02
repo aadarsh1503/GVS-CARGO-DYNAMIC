@@ -44,21 +44,24 @@ app.use('/api/excels', excelRoutes);
 // --- NEW AND IMPROVED /api/detect-region ROUTE ---
 app.get('/api/detect-region', async (req, res) => {
   try {
-    // Get the client's IP. For local development ('::1' or '127.0.0.1'), use a public IP for testing.
-    // Express's `req.ip` might be unreliable behind proxies. `req.headers['x-forwarded-for']` is often better.
-    const ip = req.headers['x-forwarded-for']?.split(',').shift() 
-               || req.socket.remoteAddress 
-               || '202.83.21.11'; // Fallback for localhost
+    // Set caching headers to prevent Vercel's Edge from serving a stale response.
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Robust IP detection, prioritizing Vercel's specific header.
+    const ip = req.headers['x-vercel-forwarded-for'] // Vercel's reliable header
+               || req.headers['x-forwarded-for']?.split(',').shift() // Standard proxy header
+               || req.socket.remoteAddress; // Fallback
+
+    // For local development, use a public IP for testing.
+    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '146.70.241.122' : ip; // Use the UAE IP for testing
     
-    // Handle localhost explicitly
-    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '202.83.21.11' : ip;
+    console.log(`Detected IP for lookup: ${finalIp}`); // Add this log to be sure
 
-    // Make a request to the third-party API
     const response = await axios.get(`http://ip-api.com/json/${finalIp}`);
-
     const geoData = response.data;
 
-    // Check if the API call was successful
     if (geoData.status === 'success') {
       res.json({
         ip: finalIp,
@@ -72,8 +75,7 @@ app.get('/api/detect-region', async (req, res) => {
         isp: geoData.isp
       });
     } else {
-      // The API returned a 'fail' status (e.g., for a private IP)
-      res.status(404).json({ ip: finalIp, error: 'Could not determine location from the API.' });
+      res.status(404).json({ ip: finalIp, error: 'Could not determine location from the API.', details: geoData.message });
     }
   } catch (error) {
     console.error('Error fetching geolocation:', error.message);
