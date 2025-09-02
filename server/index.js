@@ -42,7 +42,7 @@ app.use('/api/excels', excelRoutes);
 // -----------------
 
 // --- NEW AND IMPROVED /api/detect-region ROUTE ---
-router.get('/detect-region', async (req, res) => { // Assuming it's in a router file
+app.get('/api/detect-region', async (req, res) => { // Assuming it's in a router file
   try {
     res.setHeader('Cache-Control', 'no-store'); // Good practice
 
