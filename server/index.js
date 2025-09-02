@@ -17,6 +17,7 @@ const adminRoutes = require('./src/routes/adminRoutes');
 const excelRoutes = require('./src/routes/excelRoutes');   
 const dotenv = require('dotenv');
 const app = express();
+app.set('trust proxy', true);
 dotenv.config();
 
 app.use(cors({
@@ -43,10 +44,17 @@ app.use('/api/excels', excelRoutes);
 
 // -----------------
 
+// app.set('trust proxy', true); set karne ke baad, is code mein koi badlav ki zaroorat nahi hai.
+// Yeh ab deployment par sahi kaam karega.
+
 app.get('/api/detect-region', (req, res) => {
+  // Deployment par: req.ip ab aapka Singapore wala IP hoga.
+  // Local machine par: req.ip ab भी '::1' hoga.
   const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '202.83.21.11' : req.ip; 
+  
   const geo = geoip.lookup(ip);
   if (geo) {
+      // Jab aap VPN se request karenge, to yahan Singapore ki details aayengi.
       res.json({ ip, countryCode: geo.country, region: geo.region, city: geo.city });
   } else {
       res.status(404).json({ ip, error: 'Could not determine location.' });
