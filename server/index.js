@@ -42,44 +42,39 @@ app.use('/api/excels', excelRoutes);
 // -----------------
 
 // --- NEW AND IMPROVED /api/detect-region ROUTE ---
-app.get('/api/detect-region', async (req, res) => {
+router.get('/detect-region', async (req, res) => { // Assuming it's in a router file
   try {
-    // Set caching headers to prevent Vercel's Edge from serving a stale response.
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    res.setHeader('Cache-Control', 'no-store'); // Good practice
 
-    // Robust IP detection, prioritizing Vercel's specific header.
-    const ip = req.headers['x-vercel-forwarded-for'] // Vercel's reliable header
-               || req.headers['x-forwarded-for']?.split(',').shift() // Standard proxy header
-               || req.socket.remoteAddress; // Fallback
-
-    // For local development, use a public IP for testing.
-    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '146.70.241.122' : ip; // Use the UAE IP for testing
-    
-    console.log(`Detected IP for lookup: ${finalIp}`); // Add this log to be sure
+    const ip = req.headers['x-vercel-forwarded-for'] || req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
+    const finalIp = (ip === '::1' || ip === '127.0.0.1') ? '177.54.157.16' : ip; // Use Brazil IP for testing
 
     const response = await axios.get(`http://ip-api.com/json/${finalIp}`);
     const geoData = response.data;
 
     if (geoData.status === 'success') {
+      const countryName = geoData.country;
+
+      // Find a region in your DB that matches the detected country name.
+      // This assumes your region 'name' field is the full country name, e.g., "Brazil".
+      // Use a case-insensitive regex for better matching.
+      const matchedRegion = await Region.findOne({ name: new RegExp('^' + countryName + '$', 'i') });
+
       res.json({
         ip: finalIp,
         countryCode: geoData.countryCode,
         country: geoData.country,
-        region: geoData.regionName,
-        city: geoData.city,
-        lat: geoData.lat,
-        lon: geoData.lon,
-        timezone: geoData.timezone,
-        isp: geoData.isp
+        // NEW: Return the matched region code, or a fallback of 'bahrain'
+        matchedRegionCode: matchedRegion ? matchedRegion.code : 'bahrain' 
       });
+
     } else {
-      res.status(404).json({ ip: finalIp, error: 'Could not determine location from the API.', details: geoData.message });
+      // If IP lookup fails, default to Bahrain
+      res.status(404).json({ ip: finalIp, error: 'Could not determine location.', matchedRegionCode: 'bahrain' });
     }
   } catch (error) {
-    console.error('Error fetching geolocation:', error.message);
-    res.status(500).json({ error: 'An error occurred while fetching geolocation data.' });
+    console.error('Error in /detect-region:', error.message);
+    res.status(500).json({ error: 'Server error during region detection.', matchedRegionCode: 'bahrain' });
   }
 });
 // --- END OF NEW ROUTE ---
